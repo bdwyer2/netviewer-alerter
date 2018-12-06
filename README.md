@@ -13,9 +13,9 @@ required".
 ## Examples
 Here are some example pages for testing the extension. You will have to delete your cookies after each test.
 
-[Valid Call (alert tone)](http://htmlpreview.github.io/?https://github.com/bdwyer2/netviewer-alerter/blob/master/examples/valid_call.html)
-[Invalid Call (beep only)](http://htmlpreview.github.io/?https://github.com/bdwyer2/netviewer-alerter/blob/master/examples/invalid_call.html)
-[Both Type (alert tone)](http://htmlpreview.github.io/?https://github.com/bdwyer2/netviewer-alerter/blob/master/examples/both_calls.html)
-[No Calls (no tones)](http://htmlpreview.github.io/?https://github.com/bdwyer2/netviewer-alerter/blob/master/examples/no_calls.html)
+* [Valid Call (alert tone)](https://bdwyer2.github.io/netviewer-alerter/valid_call.html)
+* [Invalid Call (beep only)](https://bdwyer2.github.io/netviewer-alerter/invalid_call.html)
+* [Both Type (alert tone)](https://bdwyer2.github.io/netviewer-alerter/both_calls.html)
+* [No Calls (no tones)](https://bdwyer2.github.io/netviewer-alerter/no_calls.html)
 
 

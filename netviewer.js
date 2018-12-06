@@ -7,8 +7,8 @@
 // @match	    http://10.10.181.129/*
 // @match	    https://e9cadrpts.ad.ongov.net/*
 // @match	    http://e9cadrpts.ad.ongov.net/*
-// @match       https://htmlpreview.github.io/*
-// @match       http://htmlpreview.github.io/*
+// @match       https://bdwyer2.github.io/*
+// @match       http://bdwyer2.github.io/*
 // @exclude	    https://10.10.181.129/NetViewer/InquiryCommand/*
 // @exclude	    http://10.10.181.129/NetViewer/InquiryCommand/*
 // @exclude	    https://e9cadrpts.ad.ongov.net/NetViewer/InquiryCommand/*
