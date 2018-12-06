@@ -1,0 +1,728 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml">
+    <head><meta http-equiv="X-UA-Compatible" content="IE=edge" /><input type="hidden" id="lang-setting" value="en-US" /><title>
+      I/NetViewer : Home Page
+    </title>
+      <link type="text/css" href="/NetViewer/Content/css/common.css" media="all" rel="Stylesheet" />
+        <link type="text/css" href="/NetViewer/Content/css/netdispatcher.css" media="all" rel="Stylesheet" />
+          <script src="/NetViewer/Scripts/jquery-1.6.min.js" type="text/javascript"></script>
+            <script src="/NetViewer/Scripts/PlugIn/jquery.validate.min.js" type="text/javascript"></script>
+              <script src="/NetViewer/Scripts/MicrosoftAjax.js" type="text/javascript"></script>
+                <script src="/NetViewer/Scripts/MicrosoftMvcAjax.js" type="text/javascript"></script>
+                  <link type="text/css"
+                  href="/NetViewer/Scripts/jquery-ui-1.8.12/development-bundle/themes/base/jquery.ui.all.css"
+                  rel="stylesheet" />
+                    <script src="/NetViewer/Scripts/jquery-ui-1.8.12/js/jquery-ui-1.8.12.custom.min.js"
+                  type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/scripts.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/globalize.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/cultures/globalize.cultures.js" type="text/javascript"></script>
+                    <script type="text/javascript" src="/NetViewer/Localization/TranslateScript?scriptUrl=/NetViewer/Scripts/validation.js">
+                    </script>
+                    <script src="/NetViewer/Scripts/PlugIn/ModalDialogND.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/PlugIn/jquery.timers.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Localization/TranslateScript?scriptUrl=~/Scripts/Notification.js" type="text/javascript"></script>
+                    <script type="text/javascript">
+                    window.onload=function(){
+                      window.onbeforeunload = function () {
+                        if (window.name != 'SearchResultsWindow') {
+                          var action = "/NetViewer/Home/SetSessionTimeOut";
+                          $.ajax({
+                            type: "GET",
+                            url: action,
+                            success: function(result){
+                            },
+                            dataType: "html",
+                            cache: false
+                          });
+                        }
+                      };
+                    }
+                  $(function () {
+                    $.url = function (url) {
+                      {
+                        var path = '/NetViewer'
+                        if (path != '/')
+                          path = path + '/'
+                        return path + url;
+                      }
+                    }
+                    // localize
+                    var c = $('#lang-setting').val();
+                    Globalize.culture(c);
+                    // override default number validate mechanism with localization support
+                    $.validator.methods.IsNumber = function (value, element) {
+                      return this.optional(element) || !isNaN(Globalize.parseFloat(value));
+                    }
+                    if (c != 'en-US' && c != 'en') {
+                      var d = $.url('Scripts/datepicker/jquery.ui.datepicker-' + c + '.js');
+                      $.getScript(d, function () {
+                        $.datepicker.setDefaults($.datepicker.regional[c]);
+                      });
+                      // d = $.url('Scripts/timeentry/jquery.timeentry-' + c + '.js');
+                      // $.getScript(d, function () {
+                        // $.timeEntry.setDefaults($.timeEntry.regional[c]);
+                        // });
+                    }
+                    var isRtl = Globalize.culture().isRTL;
+                    if(isRtl != false && $('div').hasClass('rtl') == false) {
+                      $('div').addClass('rtl');
+                    }
+                    $('a.PartialModalDialog').live("click", function (event) { LoadDialog(this, event); });
+                    setUpNotification(60, '');
+                    $('.hint').focus(function () {
+                      if ($(this).hasClass('hint')) {
+                        $(this).removeClass('hint');
+                        $(this).val('');
+                      }
+                    });
+                    $('.hint').change(function () {
+                      if ($(this).val() != '')
+                      {
+                        $(this).removeClass('hint');
+                      }
+                    });
+                    $('.hint').blur(function () {
+                      if ($(this).val() == '') {
+                        $(this).addClass('hint');
+                        $(this).val($(this).attr('title'));
+                      }
+                    });
+                  });
+                  function GetLocalizedInt(val) {
+                    if(val == null || val == '')
+                      return 0;
+                    else {
+                      return Globalize.parseInt(val);
+                    }
+                  }
+                  function GetLocalizedFloat(val) {
+                    if(val == null || val == '')
+                      return 0.0;
+                    else {
+                      return Globalize.parseFloat(val);
+                    }
+                  }
+                  function LoadDialog(tag, event) {
+                    var action = "/NetViewer/Home/GetConfigLayoutPartialView";
+                    $.ajax({
+                      type: "GET",
+                      url: action,
+                      success: function(result){
+                        $('<div></div>').attr('title','Layout Configuration').attr('id','searchDivDialog').append(result).appendTo(document.body);
+                        $("#layoutCfgTable tr td").each(function () {$(this).css({border: 0 + 'px'})});
+                        $("#searchDivDialog").dialogND({
+                          autoOpen: true,
+                          draggable: false,
+                          resizable: false,
+                          modal: true,
+                          height: 700,
+                          width: 880
+                        });
+                      },
+                      dataType: "html",
+                      cache: false
+                    });
+                  };
+                  function GoFind()
+                  {
+                    //remove value if has class hint
+                    if ($('#quick-find').hasClass('hint') == true) {
+                      $('#quick-find').val('');
+                      alert("Please enter ID or string to search.");
+                      $('#quick-find').focus();
+                      return false;
+                    }
+                    $("#loadingImg").css("visibility","visible");
+                    var Query = document.getElementById("quick-find").value;
+                    var action = "/NetViewer/InquiryCommand/QuickFind";
+                    $.ajax({
+                      type: "GET",
+                      url: action,
+                      data: ({ id: Query }),
+                      success: function (result) {
+                        if (result!=null)
+                        {
+                          result = JSON.parse(result);
+                          if(result.IsSuccessful)
+                          {
+                            window.location.href = $.url(result.ResponseText);
+                          }
+                          else
+                          {
+                            $('<div></div>').attr('title', 'Search Results').attr('id', 'quickFind').append(result.ResponseText).appendTo(document.body);
+                            $("#quickFind").dialogND({
+                              autoOpen: true,
+                              draggable: false,
+                              resizable: false,
+                              modal: true,
+                              height: '275',
+                              width: '440'
+                            });
+                          }
+                        }
+                        $("#loadingImg").css("visibility","hidden");
+                      },
+                      dataType: "html",
+                      cache: false
+                    });
+                    return false;
+                  }
+                  function kd(e)
+                  {
+                    //alert("keydown");
+                    var intKey =(e)?e.which : e.keyCode;
+                    if (intKey==13) {
+                      GoFind();
+                      return false;
+                    }
+                    return true ;
+                  }
+                  function newPopup(url)
+                  {
+                    popupWindow = window.open(url,'popUpWindow','height=700,width=800,left=10,top=10,resizable=yes,scrollbars=yes,toolbar=yes,menubar=no,location=no,directories=no,status=yes')
+                  }
+                  </script>
+                    </head>
+                    <body>
+                    <div class="head">
+                    <h1 class="logo">
+                    <span>Intergraph</span> <a href="/NetViewer/Home/Index" title="Home">I/NetViewer</a></h1>
+                    <p class="head-search">
+                    <label for="quick-find">Search:</label>
+                    <input type="text" id="quick-find" class="common-input hint" title="Enter ID#" value="Enter ID#" onkeydown="return kd(event)" />
+                    <button class="primary-btn" title="Search" onclick="GoFind()">
+                    Go &rsaquo;</button>
+                    &nbsp;<img id="loadingImg" alt="Loading" style="visibility:hidden" src="/NetViewer/Content/images/ajax-loader.gif" />
+                    </p>
+                    <ul class="nav-user">
+                    <li id="newmessagelink">
+                    </li>
+                    <li id="newbroadcastlink">
+                    </li>
+                    <li><label style="color: white;">SUKCIC</label><a href="/NetViewer/Account/Logoff">
+                    [Logoff]</a>
+                    <span class="separator">&#124;</span><span class="separator">&#124;</span><span class="separator">&#124;</span>
+                    <span class="separator">&#124;
+                    </li>
+                    </ul>
+                    <ul class="help-options">
+                    <li>
+                    <a href="#" >Help</a>
+                    <ul>
+                    <li><a href= "JavaScript:newPopup('/NetViewer/Content/help/index.htm');">Help Topics</a></li>
+                    <li><a href="/NetViewer/Home/About">About I/NetViewer</a></li>
+                    </ul>
+                    </li>
+                    </ul>
+                    </div>
+                    <div id="subhead" class="subhead" style="z-index: 100">
+                    <ul id="nav" class="nav">
+                    <li class="selected"><a href="/NetViewer/" title="Main Page" >Main</a>
+                    </li>
+                    <li class="icon-dropdown"><a href="#" title="Commands used to manipulate events" >Events</a>
+                    <ul class="dropdown">
+                    </ul>
+                    </li>
+                    <li class="icon-dropdown"><a href="#" title="Commands used to manipulate units" >Units</a>
+                    <ul class="dropdown">
+                    </ul>
+                    </li>
+                    <li class="icon-dropdown"><a href="#" title="Commands used to handle messaging, notification and diverting." >Messages</a>
+                    <ul class="dropdown">
+                    <li><a href="/NetViewer/MessagesCommand/ReceiveMessage" title="Receive messages which sent to you" >Inbox</a>
+                    </li>
+                    </ul>
+                    </li>
+                    <li class="icon-dropdown"><a href="#" title="Line up" >Lineups</a>
+                    <ul class="dropdown">
+                    </ul>
+                    </li>
+                    <li class="icon-dropdown"><a href="#" title="Commands used to make inquiries on events and units" >Inquiry</a>
+                    <ul class="dropdown megamenu"><li class="col"><ul>
+                    <li><strong>Event Inquiries</strong></li><li><a href="/NetViewer/InquiryCommand/EventSearch" title="Search an existing event" >Event Search</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/FDID" title="Search an existing event" >Event Search by Unit DGroup</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/AniAli" title="ANI/ALI Search" >ANI/ALI Search</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/SuppSrch" title="Supplemental Data" >Supplemental Data</a>
+                    </li>
+                    </ul>
+                    <ul>
+                    <li><strong>Unit Inquiries</strong></li><li><a href="/NetViewer/InquiryCommand/Crews" title="Crews" >Crews</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/UnitEquipment" title="Find a Unit Equipment" >Unit Equipment</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/UnitHist" title="Unit History" >Unit History</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/UnLineup" title="Search an existing Unit Lineup" >Unit Lineup</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/UnRost" title="Unit Roster" >Unit Roster</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/UnitSum" title="Unit Summary" >Unit Summary</a>
+                    </li>
+                    </ul>
+                    </li>
+                    <li class="col"><ul>
+                    <li><strong>Operator Inquiries</strong></li><li><a href="/NetViewer/InquiryCommand/Skill" title="Skill Search" >Skill Search</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/Who" title="Command used to display currently loged on users" >Who</a>
+                    </li>
+                    </ul>
+                    <ul>
+                    <li><strong>Misc</strong></li><li><a href="/NetViewer/InquiryCommand/BroadcastSearch" title="Searching for Broadcast Information" >Broadcast Search</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/DatabaseStatus" title="Review the status of the database" >Database Status</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/WindowAddress" title="Displaying an address location on the map" >Window Address</a>
+                    </li>
+                    <li><a href="/NetViewer/InquiryCommand/ConfigureArchiveDB" title="Switch Between Available Inquiry Databases" >Change Inquiry DB</a>
+                    </li>
+                    </ul>
+                    </li>
+                    </ul>
+                    </li>
+                    <li class="icon-dropdown"><a href="#" title="Configure netproduct" >Configure</a>
+                    <ul class="dropdown">
+                    <li><a href="/NetViewer/Account/ChangePassword" title="Change Password" >Change Password</a>
+                    </li>
+                    <li><a href="/NetViewer/ConfigureCommand/EventMonitorColumnLayout" title="Event Monitor Column Layout" >Event Monitor Column Layout</a>
+                    </li>
+                    <li><a href="/NetViewer/ConfigureCommand/EventMonitorDisplayFilter" title="Event Monitor Display Filter" >Event Monitor Display Filter</a>
+                    </li>
+                    <li><a class="PartialModalDialog" href="#" title="Config Layout through popup window" >Layout</a>
+                    </li>
+                    <li><a href="/NetViewer/ConfigureCommand/MapFeatures" title="Filter the map view to display those features you want" >Map Features</a>
+                    </li>
+                    <li><a href="/NetViewer/ConfigureCommand/MapRasterFiles" title="Raster Files" >Raster Files</a>
+                    </li>
+                    <li><a href="/NetViewer/ConfigureCommand/MapReferenceFiles" title="Reference Files" >Reference Files</a>
+                    </li>
+                    <li><a href="/NetViewer/ConfigureCommand/UnitMonitorColumnLayout" title="Unit Monitor Column Layout" >Unit Monitor Column Layout</a>
+                    </li>
+                    <li><a href="/NetViewer/ConfigureCommand/UnitMonitorDisplayFilter" title="Unit Monitor Display Filter" >Unit Monitor Display Filter</a>
+                    </li>
+                    </ul>
+                    </li>
+                    <li><a href="#" title="Components added through AddIn Framework" >AddIns</a>
+                    </li>
+                    </ul>
+                    </div>
+                    <link type="text/css" href="/NetViewer/Content/css/Map.css" rel="Stylesheet" />
+                    <script src="/NetViewer/Localization/TranslateScript?scriptUrl=~/Scripts/NDWindow/jquery.ui.ndwindowgd.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/NDWindow/windowCoordinator.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/NDWindow/autoRefreshNDWindow.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/dragDrop.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/contextMenu.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/PlugIn/jquery.mousewheel.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/PlugIn/jquery.tablesorterND.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/Common.js" type="text/javascript"></script>
+                    <script type="text/javascript">
+                    var eventMonitor;
+                  var unitMonitor;
+                  var mapMonitor;
+                  var monitor1;
+                  var monitor2;
+                  var monitor3;
+                  var sorterEvent;
+                  var sorterUnit;
+                  var autoRefreshInterval = 60;
+                  var fadeoutEvents = 5;
+                  var fadeoutUnits = 2;
+                  var employId ="386000030";
+                  var clickedColor ="Orange";
+                  var tdColor ="tr.clicked td { background-color: "+clickedColor+";!important }";
+                  var eventMonitorExists = false;
+                  var unitMonitorExists = false;
+                  var mapMonitorExists = false;
+                  var EvMonSorting = false;
+                  var UnitMonSorting = false;
+                  var createEventPerm ="N";
+                  if(document.styleSheets)
+                  {
+                    document.write('<style type="text/css">');
+                    document.write(tdColor);
+                    document.write('</style>');
+                  }
+                  $(document).ready(function () {
+                    var panel1 = null;panel2 = null;panel3 = null;
+                    var layoutStr= "TwoPaneVer,Id :eventmonitor | Name :Event Monitor | PartialView:EventsCtrl | Action: | Controller: | URL :,Id :MapMonitor | Name :Map | PartialView:Map | Action: | Controller: | URL :,null,50,null,null,null";
+                    if(layoutStr && layoutStr!="")
+                    {
+                      var result = layoutStr.split(',');
+                      panel1 = GetValue(result[1], "Id");
+                      panel2 = GetValue(result[2], "Id");
+                      panel3 = GetValue(result[3], "Id");
+                      if(panel1 && panel1 != "" && panel1 != "null")
+                      {
+                        monitor1 = CreateMonitor(panel1, GetValue(result[1],"Name"));
+                        LoadPanel(result[1], "#" + panel1);
+                      }
+                      if(panel2 && panel2 != "" && panel2 != "null")
+                      {
+                        monitor2 = CreateMonitor(panel2, GetValue(result[2],"Name"));
+                        LoadPanel(result[2], "#" + panel2);
+                      }
+                      if(panel3 && panel3 != "")
+                      {
+                        monitor3 = CreateMonitor(panel3, GetValue(result[3],"Name"));
+                        LoadPanel(result[3], "#" + panel3);
+                      }
+                      //If no saved layout exists
+                      if(panel1 == null && panel2 == null && panel3 == null)
+                      {
+                        monitor1 = BuildDefaultMonitor(result[1]);
+                        monitor2 = BuildDefaultMonitor(result[2]);
+                        monitor3 = BuildDefaultMonitor(result[3]);
+                      }
+                    }
+                    resetMonitorStatus(monitor1, monitor2, monitor3);
+                    GetLayoutConfiguration();
+                    //set up autorefresh
+                    setUpAutoRefreshForTimeColumn();
+                    if (Number(autoRefreshInterval) > 0) {
+                      setUpAutoRefresh(Number(autoRefreshInterval), Number(fadeoutEvents), Number(fadeoutUnits), eventMonitorExists, unitMonitorExists, mapMonitorExists); //for map
+                    }
+                    //set up client side sorting
+                    $.tablesorterND.addWidget({
+                      id: "sortDAEvent",
+                      // format is called when the on init and when a sorting has finished
+                      format: function (table) {
+                        $(table.tBodies).find("tr").each(function () {
+                          // var idRow = $(this).attr("id")
+                          var idRow = $(this).attr("tid")
+                          if(idRow!= null && idRow.indexOf("DAEvent_") === 0) {
+                            var attachedUnitId = idRow.substring(8, idRow.length);
+                            // $(table.tBodies).find("#" + attachedUnitId).after($(table.tBodies).find("#" + idRow));
+                            $(table.tBodies).find("[tid='" + attachedUnitId + "']").after($(table.tBodies).find("[tid='" + idRow + "']"));
+                          }
+                        });
+                      }
+                    });
+                    $.tablesorterND.addWidget({
+                      id: "cleanUpTalbe",
+                      // format is called when the on init and when a sorting has finished
+                      format: function (table) {
+                        $(table.tBodies).find('#hiddenHeader').appendTo(table.tBodies);
+                        $(table.tBodies).find("tr").removeClass("alt");
+                        $(table.tBodies).find("tr:odd").addClass("alt");
+                      }
+                    });
+                    //create sorter for event monitor
+                    if(eventMonitorExists)
+                    {
+                      var sortListEvent;
+                      cookieName = "EventSorter_"+employId;
+                      var cookieEvSorter = readCookie(cookieName);
+                      var cookieName = "ServerEventSorter_"+employId;
+                      var cookieEvServerSort = readCookie(cookieName);
+                      if(cookieEvServerSort && cookieEvServerSort!="")
+                      {
+                        sortListEvent = cookieEvServerSort;
+                        createCookie(cookieName, "", null);
+                      }
+                      else if(cookieEvSorter && cookieEvSorter!="")
+                        sortListEvent = cookieEvSorter;
+                      else
+                        sortListEvent = "[[1,0],[2,0],[3,1]]";
+                      var disalbeEventSort = "{0: {sorter:false}}";
+                      if(disalbeEventSort == "{}")
+                        sorterEvent = $("#eventmonitor").tablesorterND({ widgets: ['zebra', 'cleanUpTalbe'], headerId: "NDWindow-eventmonitor_headerTable", sortList: eval(sortListEvent)});
+                      else{
+                        disalbeEventSort = {0: {sorter:false}};
+                        sorterEvent = $("#eventmonitor").tablesorterND({ widgets: ['zebra', 'cleanUpTalbe'], headerId: "NDWindow-eventmonitor_headerTable", sortList: eval(sortListEvent),headers:eval(disalbeEventSort)});
+                      }
+                      $("#eventmonitor").bind("sortStart",function() {
+                        EvMonSorting = true;
+                      }).bind("sortEnd",function() {
+                        EvMonSorting = false;
+                      });
+                    }
+                    if(unitMonitorExists)
+                    {
+                      var sortListUnit;
+                      cookieName = "UnitSorter_"+employId;
+                      var cookieUnitSorter = readCookie(cookieName);
+                      cookieName = "ServerUnitSorter_"+employId;
+                      var cookieUnitServerSort = readCookie(cookieName);
+                      if(cookieUnitServerSort && cookieUnitServerSort!="")
+                      {
+                        sortListUnit = cookieUnitServerSort;
+                        createCookie(cookieName, "", null);
+                      }
+                      else if(cookieUnitSorter && cookieUnitSorter!="")
+                        sortListUnit =cookieUnitSorter;
+                      else
+                        sortListUnit = "[[4,0]]";
+                      // var disalbeUnitSort = "{3: {sorter:false},5: {sorter:false},6: {sorter:false},7: {sorter:false}}";
+                      // if(disalbeUnitSort == "{}")
+                        // sorterUnit = $("#unitmonitor").tablesorterND({ widgets: ['zebra', 'sortDAEvent', 'cleanUpTalbe'], headerId: "NDWindow-unitmonitor_headerTable", sortList: eval(sortListUnit)});
+                        // else
+                          // {
+                            // disalbeUnitSort = {3: {sorter:false},5: {sorter:false},6: {sorter:false},7: {sorter:false}};
+                            // sorterUnit = $("#unitmonitor").tablesorterND({ widgets: ['zebra', 'sortDAEvent', 'cleanUpTalbe'], headerId: "NDWindow-unitmonitor_headerTable", sortList: eval(sortListUnit),headers:eval(disalbeUnitSort)});
+                            // }
+                        // In UnitMonitor Column Sorting was not properly working
+                        sorterUnit = $("#unitmonitor").tablesorterND({ widgets: ['zebra', 'sortDAEvent', 'cleanUpTalbe'], headerId: "NDWindow-unitmonitor_headerTable", sortList: eval(sortListUnit)});
+                        $("#unitmonitor").bind("sortStart",function() {
+                          UnitMonSorting = true;
+                        }).bind("sortEnd",function() {
+                          UnitMonSorting = false;
+                        });
+                    }
+                    $(window).bind('beforeunload',function(){
+                      if(eventMonitorExists)
+                      {
+                        var tmpSort = getSortList(sorterEvent[0].config.sortList.join());
+                        var cookieName = "EventSorter_"+employId;
+                        createCookie(cookieName,tmpSort,null);
+                      }
+                      if(unitMonitorExists)
+                      {
+                        tmpSort = getSortList(sorterUnit[0].config.sortList.join());
+                        cookieName = "UnitSorter_"+employId;
+                        createCookie(cookieName,tmpSort,null);
+                      }
+                    });
+                  });
+                  function getSortList(sortStr)
+                  {
+                    var sortList=sortStr.split(',');
+                    if(sortList.length<2)
+                      return "[]";
+                    var sortingStr="[";
+                    for(var i=0;i<sortList.length;i++)
+                    {
+                      if(i%2==0)
+                        sortingStr=sortingStr+"["+sortList[i]+",";
+                      else
+                        sortingStr = sortingStr+sortList[i]+"]"+",";
+                    }
+                    sortingStr=sortingStr.substring(0,sortingStr.length-1);
+                    sortingStr+="]";
+                    return sortingStr;
+                  }
+                  function updateMapWithPerUserSetting() {
+                    if ($("#NDWindow-MapMonitor_content")[0] != null) { //map loaded
+                      $("#MapContainer").width($("#NDWindow-MapMonitor_content").width());
+                      $("#MapContainer").height($("#NDWindow-MapMonitor_content").height());
+                      windowWidth = $("#NDWindow-MapMonitor_content").width();
+                      windowHeight = $("#NDWindow-MapMonitor_content").height();
+                    }
+                    //update map
+                    if(windowWidth == null)
+                      windowWidth = 0;
+                    if(windowHeight == null)
+                      windowHeight = 0;
+                    var url= '/NetViewer/map/getmapinfo';
+                    $.post(url, { width: windowWidth * 2, height: windowHeight * 2 },
+                           function (data) {
+                             OnUpdateMap(data, false);
+                             zoomLevel = "level" + data.ZoomLevel.toString();
+                             setSelectedZoomLevel(zoomLevel);
+                           });
+                  };
+                  function GetLayoutConfiguration() {
+                    var panString1 = null;var panString2 = null;var panString3 = null;
+                    var layoutStr= "TwoPaneVer,Id :eventmonitor | Name :Event Monitor | PartialView:EventsCtrl | Action: | Controller: | URL :,Id :MapMonitor | Name :Map | PartialView:Map | Action: | Controller: | URL :,null,50,null,null,null";
+                    if(layoutStr && layoutStr!="")
+                    {
+                      result = layoutStr.split(',');
+                      panString1 = GetValue(result[1], "Name");
+                      panString2 = GetValue(result[2], "Name");
+                      panString3 = GetValue(result[3], "Name");
+                      if(panString1 ==null)
+                        panString1 = result[1];
+                      if(panString2 == null)
+                        panString2 = result[2];
+                      if(panString3 == null)
+                        panString3 = result[3];
+                      BuildLayout(result[0], panString1, panString2, panString3, result[4], result[5], result[6], result[7]);
+                      if(mapMonitorExists)
+                        updateMapWithPerUserSetting();
+                    }
+                    else
+                    {
+                      buildSplitLeftPattern(monitor1, monitor2, monitor3, 0.6, 0.5);
+                      buildSplitLeftPattern(monitor1, monitor2, monitor3, 0.6, 0.5); //if call this method only one time, display is incorrect
+                      $(window).resize(function (event) { buildSplitLeftPattern(monitor1, monitor2, monitor3, 0.6, 0.5); });
+                      if($("#eventmonitor")[0])
+                        $("#eventmonitor")[0].removeAttribute('style');
+                      if($("#unitmonitor")[0])
+                        event$("#unitmonitor")[0].removeAttribute('style');
+                      if(mapMonitorExists)
+                        updateMapWithPerUserSetting();
+                    }
+                  }
+                  function createCookie(name,value,days) {
+                    if (days) {
+                      var date = new Date();
+                      date.setTime(date.getTime()+(days*24*60*60*1000));
+                      var expires = "; expires="+date.toGMTString();
+                    }
+                    else var expires = "";
+                    document.cookie = name+"="+value+expires+"; path=/";
+                  }
+                  function readCookie(name) {
+                    var nameEQ = name + "=";
+                    var ca = document.cookie.split(';');
+                    for(var i=0;i < ca.length;i++) {
+                      var c = ca[i];
+                      while (c.charAt(0)==' ') c = c.substring(1,c.length);
+                      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+                    }
+                    return null;
+                  }
+                  function eraseCookie(name) {
+                    createCookie(name,"",-1);
+                  }
+                  function CreateMonitor(panel, result){
+                    var monitor = null;
+                    var buttonName = null;
+                    var hrefButton = null;
+                    if(panel.toLowerCase() == "eventmonitor")
+                    {
+                      eventMonitorExists = true;
+                      monitor = AddMonitor("#" + panel, result, true, buttonName, "/NetViewer/EventCommand/CreateEvent", true);
+                      eventMonitor = monitor;
+                    }
+                    else if(panel.toLowerCase() == "unitmonitor")
+                    {
+                      unitMonitorExists = true;
+                      monitor = AddMonitor("#" + panel, result, true, buttonName, "/NetViewer/UnitsCommand/LogonUnit", true);
+                      unitMonitor = monitor;
+                    }
+                    else if(panel.toLowerCase() == "mapmonitor")
+                    {
+                      mapMonitorExists = true;
+                      monitor = AddMonitor("#" + panel, result, false, buttonName, hrefButton, false);
+                      mapMonitor = monitor;
+                    }
+                    else
+                    {
+                      monitor = AddMonitor("#" + panel, result, false, buttonName, hrefButton, true);
+                    }
+                    return monitor;
+                  }
+                  function BuildDefaultMonitor(panel)
+                  {
+                    var monitor = null;
+                    if(panel.toLowerCase() == "event monitor")
+                      monitor = CreateMonitor("eventmonitor", "Event Monitor");
+                    else if(panel.toLowerCase() == "unit monitor")
+                      monitor = CreateMonitor("unitmonitor", "Unit Monitor");
+                    else if(panel.toLowerCase() == "map")
+                      monitor = CreateMonitor("MapMonitor", "Map");
+                    return monitor;
+                  }
+                  </script>
+                    <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+                    <div class="main home">
+                    <table id="eventmonitor" class="monitorDataTable" style="visibility: hidden" oncontextmenu="eventContextMenu(event);return false;" defaultSort="[[1,0],[2,0],[3,1]]">
+                    <tr><th><a href="#">A</a></th><th><a href="#">Status</a></th><th><a href="#">P</a></th><th><a href="#">Time</a></th><th><a href="#">1 - Events</a></th><th><a href="#">Type</a></th><th><a href="#">Location</a></th></tr>
+                    <tr style = 'color: rgb(0,0,255); ' eventId='E99000000000' statusMneu='A' name='E99000000000' id='E99000000000' agency='EMS' dgroup='SUE'><TD></TD><TD>A</TD><TD>1</TD><TD>0:02</TD><TD><A HREF='/NetViewer/InquiryCommand/EventInformation?eventID=E99000000000' TITLE='Display additional event information' style='text-decoration:underline; color:rgb(0,0,255)'>E99000000000</A></TD><TD>TEST</TD><TD>111 WAVERLY AVE 13210 SYR: @SU AMBULANCE</TD></tr>
+                    </table>
+                    <script src="/NetViewer/Scripts/PlugIn/jquery.mousewheel.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/PlugIn/jsDraw2D.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/PlugIn/webkitdragdrop.js" type="text/javascript" ></script>
+                    <script src="/NetViewer/Scripts/PlugIn/jgestures.min.js" type="text/javascript" ></script>
+                    <script type="text/javascript" src="/NetViewer/Localization/TranslateScript?scriptUrl=~/Scripts/MapParameters.js"></script>
+                    <script src="/NetViewer/Scripts/PlugIn/jquery.timers.js" type="text/javascript"></script>
+                    <script src="/NetViewer/Scripts/PlugIn/ModalDialogND.js" type="text/javascript" ></script>
+                    <script type="text/javascript">
+                    isWindowMap = "False";
+                  windMapEventId = "";
+                  windMapUnitId = "";
+                  var strXCoord = "0";
+                  winXCoord = parseFloat(strXCoord);
+                  var strYCoord = "0";
+                  winYCoord = parseFloat(strYCoord);
+                  var strWidth = "780";
+                  windowWidth = parseInt(strWidth);
+                  var strHeight = "600";
+                  windowHeight = parseInt(strHeight);
+                  var agentId = navigator.userAgent.toLowerCase().match(/(iphone|ipad|ipod)/);
+                  if (agentId) {
+                    if (windMapEventId || windMapUnitId) {
+                      $.post($.url("map/GetWindowedMapInfo"), { width: windowWidth * 2, height: windowHeight * 2, eventId: windMapEventId, unitId: windMapUnitId }, function (data) {
+                        OnUpdateMap(data, false);
+                        zoomLevel = "level" + data.ZoomLevel.toString();
+                        setSelectedZoomLevel(zoomLevel);
+                      });
+                    }
+                  }
+                  </script>
+                    <style type="text/css">
+                    #MapContainer {width:780px; height:700px; overflow:hidden;position:relative;}
+                    </style>
+                    <div id="MapMonitor">
+                    <ul class="map-options" id="MapOptions">
+                    <li><a href="#" class="icon-fit-all" title="Fit Map" id="MapFitAll" >Fit All <span class="icon"></span></a></li>
+                    <li><a href="#" class="icon-area" title="Zoom by Area" id="AreaButton" >Area<span class="icon"></span></a></li>
+                    <li><a href="#" class="icon-query" title="Query Map Details" id="QueryButton">Query<span class="icon"></span></a></li>
+                    <li>
+                    <a href="#" class="icon-more">More <span class="icon"></span></a>
+                    <ul>
+                    <li><a href="#" class="icon-layers" title="Set Map Levels" id="MapLevel">Layers <span class="icon"></span></a></li>
+                    <li><a href="#" class="icon-redlines" title="Set Displayed Graphics" id="MapRedLine">Redlines <span class="icon"></span></a></li>
+                    <li><a href="#" class="icon-ruler" title="Measure Distance" id="MeasureDistance" >Ruler <span class="icon"></span></a></li>
+                    </ul>
+                    </li>
+                    </ul>
+                    <ul class="nav-scroll" id="MapPan">
+                    <li><a href="#" title="Pan Up" class="icon-scrollup" id="MapScrollUp" >Pan Up</a></li>
+                    <li><a href="#" title="Pan Right" class="icon-scrollright" id="MapScrollRight">Pan Right</a></li>
+                    <li><a href="#" title="Pan Down" class="icon-scrolldown" id="MapScrollDown" >Pan Down</a></li>
+                    <li><a href="#" title="Pan Left" class="icon-scrollleft" id="MapScrollLeft" >Pan Left</a></li>
+                    </ul>
+                    <ul class="nav-zoom" id="MapZoomLevel">
+                    <li><a href="#" title="Zoom In" class="icon-zoomin" id ="zoomin">Zoom In<span class="icon" id="zoominicon"></span></a></li>
+                    <li><a href="#" title="Zoom Level 12" class="icon-tick" id="level11">Zoom Level 12</a></li>
+                    <li><a href="#" title="Zoom Level 11" class="icon-tick" id="level10">Zoom Level 11</a></li>
+                    <li><a href="#" title="Zoom Level 10" class="icon-tick" id="level9">Zoom Level 10</a></li>
+                    <li><a href="#" title="Zoom Level 9" class="icon-tick" id="level8">Zoom Level 9</a></li>
+                    <li><a href="#" title="Zoom Level 8" class="icon-tick" id="level7">Zoom Level 8</a></li>
+                    <li><a href="#" title="Zoom Level 7" class="icon-tick" id="level6">Zoom Level 7</a></li>
+                    <li><a href="#" title="Zoom Level 6" class="icon-tick" id="level5">Zoom Level 6</a></li>
+                    <li><a href="#" title="Zoom Level 5" class="icon-tick" id="level4">Zoom Level 5</a></li>
+                    <li><a href="#" title="Zoom Level 4" class="icon-tick" id="level3">Zoom Level 4</a></li>
+                    <li><a href="#" title="Zoom Level 3" class="icon-tick" id="level2">Zoom Level 3</a></li>
+                    <li><a href="#" title="Zoom Level 2" class="icon-tick" id="level1">Zoom Level 2</a></li>
+                    <li><a href="#" title="Zoom Level 1" class="icon-tick selected" id="level0">"Zoom Level 1</a></li>
+                  <li><a href="#" title="Zoom Out" class="icon-zoomout" id ="zoomout">Zoom Out<span class="icon" id="zoomouticon"></span></a></li>
+                  </ul>
+                    <div id="MapContainer" >
+                    <div id = "MapControl" ondblclick="onMapDisplayDblClick(event);" >
+                    <img id = "backgroundMapImage" name = "backgroundMapImage" style="position:absolute; top:0px; left:0px; z-index:0 ;cursor:url(/NetViewer/Content/images/grab.cur),pointer" onload="onBackgroundMapImageLoad();"/>
+                    <img id="MapSymbol" style="position:absolute; z-index:0; cursor:url(/NetViewer/Content/images/grab.cur),pointer" onload="onMapSymbolLoad();" />
+                    <div id= "QueryStreetPanel" class="query-info" style="position:absolute; z-index:5; display:none">
+                    <div id="qslabel" ></div>
+                    <dd><a id="qslink" href="" target="_self" >Details</a></dd>
+                    </div>
+                    <div id="SymbolListPanel" class="symbol-list" ></div>
+                    </div>
+                    <div id = "MapGraphics" style="position:absolute;z-index:1">
+                    <div id = "Area" style="position:absolute; border:2px solid blue; display:none;" ></div>
+                    <div id = "DistanceLine" style="position:absolute;"></div>
+                    </div>
+                    </div>
+                    <input type="hidden" id="grabIconUrl" value= "/NetViewer/Content/images/grab.cur"/>
+                    <input type="hidden" id="getHighlightedMapUrl" value= "/NetViewer/Map/GetHighlightedMap"/>
+                    <input type="hidden" id="getmapsymbolUrl" value= "/NetViewer/map/getmapsymbol"/>
+                    <input type="hidden" id="getmapUrl" value= "/NetViewer/map/getmap"/>
+                    <input type="hidden" id="pushpinUrl" value= "/NetViewer/Content/images/Pushpin.png"/>
+                    <input type="hidden" id="findMapSymbolAtPointUrl" value= "/NetViewer/Map/FindMapSymbolAtPoint"/>
+                    <input type="hidden" id="findElementAtPointUrl" value= "/NetViewer/map/FindElementAtPoint"/>
+                    <input type="hidden" id="findStreetAtPointUrl" value= "/NetViewer/map/FindStreetAtPoint"/>
+                    <input type="hidden" id="getnamedgraphicsUrl" value= "/NetViewer/map/getnamedgraphics"/>
+                    <input type="hidden" id="getleveldataUrl" value= "/NetViewer/map/getleveldata"/>
+                    <input type="hidden" id="updateLevelDataUrl" value= "/NetViewer/map/UpdateLevelData"/>
+                    </div>
+                    </div>
+                    <input type="hidden" id="refreshMapLevel" value="11"/>
+                    <div class="hide" id="SoundMedia"></div>
+                    <input type="hidden" id="MapUnit" value="Miles" />
+                    <input type="hidden" id="UorsPerMapUnit" value="528000" />
+                    </body>
+                    </html>
