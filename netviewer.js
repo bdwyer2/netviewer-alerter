@@ -45,7 +45,7 @@ Jose Ginorio '23 - modernization
 */
 
 // set to true to log everything and use short cookies
-const DEBUG = true
+const DEBUG = false
 
 if (DEBUG){console.log("Debug Mode");}
 
