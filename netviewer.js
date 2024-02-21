@@ -79,11 +79,10 @@ const IGNORED_LOCATIONS = [
     "1000 E GENESEE ST 13210 SYR: @THE HILL MEDICAL"
 ];
 
-function set_cookie(c_name, c_value = true, ex_secs = 10800) {
+function set_cookie(c_name, c_value = true, c_secs = 10800) {
     if (DEBUG){
         console.log(">>> Setting cookie to 10 seconds");
-        ex_secs = 10;
-
+        c_secs = 10;
         console.log(">>> Setting Cookie");
         console.log(">>>    c_name = " + c_name);
         console.log(">>>    c_value = " + c_value);
@@ -91,24 +90,19 @@ function set_cookie(c_name, c_value = true, ex_secs = 10800) {
     }
 
     let d = new Date()
-    d.setTime(d.getTime() + ex_secs * 1000);
+    d.setTime(d.getTime() + c_secs * 1000);
 
     document.cookie = `${c_name}=${c_value}; expires=${d.toUTCString} path=/`;
 }
 
-
 function is_alerted(c_name) {
     var name = c_name + '=true';
-    var cookies = document.cookie.split(';');
+    var cookies = document.cookie.split(';'); // split the cookies into an array
 
     for (var i=0; i < cookies.length; i++) {
         var cookie = cookies[i];
-        if (cookie == name) {
-            if (DEBUG){console.log(">>> yes, we have alerted");}
-            return true;
-        }
+        if (cookie.trim() == name.trim()) {return true;}
     }
-    if (DEBUG){console.log(">>> NO, we have not alerted");}
     return false;
 }
 
@@ -140,9 +134,11 @@ function main(rows) {
     }
 
     if (notify) {
-        new Audio(ALERT_SHORT_DATA).play();
-    } else if(call) {
+        if (DEBUG){console.log(">>> playing long");}
         new Audio(ALERT_LONG_DATA).play();
+    } else if(call) {
+        if (DEBUG){console.log(">>> playing short");}
+        new Audio(ALERT_SHORT_DATA).play();
     }
 }
 
@@ -152,7 +148,6 @@ function main(rows) {
     window.setInterval(function () {
         let table = document.getElementById('eventmonitor');
         let rows = Array.from(table.rows);
-        rows.pop();
 
         if (table) main(rows);
     }, 1000);
